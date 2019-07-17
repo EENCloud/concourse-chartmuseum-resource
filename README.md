@@ -98,9 +98,3 @@ charts `Chart.yaml` file. If the override version is stored in a file, you can u
 * `key_passphrase`: If `sign` has been set to `true` this parameter can be used to
   specifcy the passphrase that protects the GPG signing key that shall be used to sign
   the chart package.
-
-* `username`: If set, adds authorization header to request sent to the Harbor request
-when uploading the chart. If set, requires password.
-
-* `password`: If set, adds authorization header to request sent to the Harbor request
-when uploading the chart. If set, requires username.

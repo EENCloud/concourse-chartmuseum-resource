@@ -19,74 +19,72 @@ export async function retrieveRequestFromStdin<T extends any>(): Promise<T> {
     });
 }
 
-export function createFetchHeaders<R extends CheckRequest>(request: R): Headers {
+export function createFetchHeaders<R extends ICheckRequest>(request: R): Headers {
     const headers = new Headers();
     if (request.source.basic_auth_username && request.source.basic_auth_password) {
         const basicAuthUsername = request.source.basic_auth_username;
         const basicAuthPassword = request.source.basic_auth_password;
-        headers.append("Authorization", `Basic ${new Buffer(basicAuthUsername + ":" + basicAuthPassword).toString("base64")}`);
+        headers.append(
+            "Authorization", `Basic ${new Buffer(basicAuthUsername + ":" + basicAuthPassword).toString("base64")}`);
     }
     return headers;
 }
 
-interface Request {
+interface IRequest {
     source: {
-        server_url: string
-        chart_name: string
-        version_range?: string
-        basic_auth_username?: string
-        basic_auth_password?: string
-    }
+        server_url: string;
+        chart_name: string;
+        version_range?: string;
+        basic_auth_username?: string;
+        basic_auth_password?: string;
+    };
 }
 
-export interface CheckRequest extends Request {
+export interface ICheckRequest extends IRequest {
     version?: {
-        version: string
-        digest: string
-    }
+        version: string;
+        digest: string;
+    };
 }
 
-export type CheckResponse = {
-    version: string
-    digest: string
-}[];
+export type CheckResponse = Array<{
+    version: string;
+    digest: string;
+}>;
 
-export interface InRequest extends CheckRequest {
+export interface IInRequest extends ICheckRequest {
+    version: {
+        version: string;
+        digest: string;
+    };
+    params: {
+        target_basename?: string,
+    };
+}
+
+export interface IResponse {
     version: {
         version: string,
-        digest: string
-    },
+        digest: string,
+    };
+    metadata: Array<{
+        name: string;
+        value: string;
+    }>;
+}
+
+export interface IOutRequest extends IRequest {
     params: {
-        target_basename?: string
-    }
-}
-
-export interface InResponse {
-    version: {
-        version: string
-        digest: string
-    }
-    metadata: {
-        name: string
-        value: string
-    }[]
-}
-
-export interface OutRequest extends Request {
-    params: {
-        chart: string
-        sign?: boolean
-        key_data?: string
-        key_file?: string
-        key_passphrase?: string
-        appVersion?: string
-        version?: string
-        version_file?: string
-        force?: boolean
-        username?: string
-        password?: string
-    }
-}
-
-export interface OutResponse extends InResponse {
+        chart: string;
+        sign?: boolean;
+        key_data?: string;
+        key_file?: string;
+        key_passphrase?: string;
+        appVersion?: string;
+        version?: string;
+        version_file?: string;
+        force?: boolean;
+        username?: string;
+        password?: string;
+    };
 }

@@ -3,8 +3,8 @@
 import fetch, { Headers } from "node-fetch";
 import * as semver from "semver";
 
-import { CheckRequest, CheckResponse } from "./index";
-import { retrieveRequestFromStdin, createFetchHeaders } from "./index";
+import { CheckResponse, ICheckRequest } from "./index";
+import { createFetchHeaders, retrieveRequestFromStdin } from "./index";
 
 const stdin = process.stdin;
 const stdout = process.stdout;
@@ -13,23 +13,24 @@ const stderr = process.stderr;
 (async () => {
 
     // Fetches the JSON object from stdin.
-    const request = await retrieveRequestFromStdin<CheckRequest>();
+    const request = await retrieveRequestFromStdin<ICheckRequest>();
 
     const headers = createFetchHeaders(request);
 
     // Requests the charts from the remote endpoint.
-    let charts = await (await fetch(`${request.source.server_url}api/charts/${request.source.chart_name}`, { headers: headers })).json() as any[];
+    let charts = await (await fetch(`${request.source.server_url}api/charts/${request.source.chart_name}`,
+    { headers })).json() as any[];
 
     // If a version has been specified in the check request, we'll use it to filter out all results
     // that are "smaller" by using semver's built-in comparison mechanism.
     if (request.version != null) {
         const reqVersion = request.version.version;
-        charts = charts.filter(chart => semver.gte(chart.version, reqVersion));
+        charts = charts.filter((chart) => semver.gte(chart.version, reqVersion));
     }
 
     if (request.source.version_range != null) {
         const versionRange = request.source.version_range;
-        charts = charts.filter(chart => semver.satisfies(chart.version, versionRange));
+        charts = charts.filter((chart) => semver.satisfies(chart.version, versionRange));
     }
 
     // Sort all charts by version (ascending).
@@ -40,13 +41,13 @@ const stderr = process.stderr;
     // chart with the new digest in our list to satisfy the contract that is required by the check action.
     if (request.version != null) {
         const reqVersion = request.version.version;
-        const idx = charts.findIndex(chart => chart.version === reqVersion);
+        const idx = charts.findIndex((chart) => chart.version === reqVersion);
         charts.splice(idx + 1, 0, request.version);
     }
 
-    const response: CheckResponse = charts.map(chart => ({
+    const response: CheckResponse = charts.map((chart) => ({
+        digest: chart.digest,
         version: chart.version,
-        digest: chart.digest
     }));
     process.stdout.write(JSON.stringify(response, null, 2));
     process.exit(0);

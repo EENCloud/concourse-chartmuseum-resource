@@ -1,48 +1,48 @@
-interface HarborChartJSON {
-    metadata: Metadata;
+export interface IHarborChartJSON {
+    metadata: IMetadata;
     dependencies: any[];
-    values: Values;
-    files: Files;
-    security: Security;
+    values: IValues;
+    files: IFiles;
+    security: ISecurity;
     labels: any[];
   }
 
-  interface Security {
-    signature: Signature;
-  }
+interface ISecurity {
+  signature: ISignature;
+}
 
-  interface Signature {
-    signed: boolean;
-    prov_file: string;
-  }
+interface ISignature {
+  signed: boolean;
+  prov_file: string;
+}
 
-  interface Files {
-    'values.yaml': string;
-  }
+interface IFiles {
+  "values.yaml": string;
+}
 
-  interface Values {
-    fullnameOverride: string;
-    'image.pullPolicy': string;
-    'image.repository': string;
-    'image.tag': string;
-    'ingress.annotations.kubernetes.io/ingress.class': string;
-    'ingress.annotations.nginx.ingress.kubernetes.io/whitelist-source-range': string;
-    'ingress.enabled': boolean;
-    'ingress.hosts': Ingresshost[];
-    'ingress.tls': any[];
-    nameOverride: string;
-    'nodeSelector.role': string;
-    replicaCount: number;
-    'service.port': number;
-    'service.type': string;
-  }
+interface IValues {
+  "fullnameOverride": string;
+  "image.pullPolicy": string;
+  "image.repository": string;
+  "image.tag": string;
+  "ingress.annotations.kubernetes.io/ingress.class": string;
+  "ingress.annotations.nginx.ingress.kubernetes.io/whitelist-source-range": string;
+  "ingress.enabled": boolean;
+  "ingress.hosts": IIngressHost[];
+  "ingress.tls": any[];
+  "nameOverride": string;
+  "nodeSelector.role": string;
+  "replicaCount": number;
+  "service.port": number;
+  "service.type": string;
+}
 
-  interface Ingresshost {
-    host: string;
-    paths: string[];
-  }
+interface IIngressHost {
+  host: string;
+  paths: string[];
+}
 
-  interface Metadata {
+interface IMetadata {
     name: string;
     version: string;
     description: string;
