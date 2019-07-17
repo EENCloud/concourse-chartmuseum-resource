@@ -2,7 +2,7 @@
 
 ## Project maintainer
 
-* Benjamin P. Jung &lt;headcr4sh@gmail.com&gt;
+* Aaron Layfield <alayfield@een.com>
 
 ## Contributors
 
