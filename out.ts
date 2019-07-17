@@ -14,6 +14,7 @@ import * as yaml from "yamljs";
 
 import { retrieveRequestFromStdin, createFetchHeaders } from "./index";
 import { OutRequest, OutResponse } from "./index";
+import btoa = require("btoa");
 
 const exec = util.promisify(child_process.exec);
 const lstat = util.promisify(fs.lstat);
@@ -101,15 +102,27 @@ export default async function out(): Promise<{ data: Object, cleanupCallback: ((
 
     let headers = createFetchHeaders(request);
 
+    if (!request.params.username && request.params.password
+        || request.params.username && !request.params.password) {
+            if (!request.params.username) {
+                process.stderr.write("Username required if password specified")
+            } else if (!request.params.password) {
+                process.stderr.write("Password required if username specified")
+            }
+            process.exit(128)
+        }
+
     // If either params.version or params.version_file have been specified,
     // we'll read our version information for packaging the Helm Chart from
     // there.
+    let appVersion = request.params.appVersion;
     let version = request.params.version;
     if (request.params.version_file != null) {
         const versionFile = path.resolve(request.params.version_file);
         if ((await lstat(versionFile)).isFile()) {
             // version_file exists. Cool... let's read it's contents.
             version = (await readFile(versionFile)).toString().replace(/\r?\n/, "")
+            appVersion = (await readFile(versionFile)).toString().replace(/\r?\n/, "")
         }
     }
     if (version != null && request.source.version_range != null) {
@@ -174,6 +187,9 @@ export default async function out(): Promise<{ data: Object, cleanupCallback: ((
         if (version != null) {
             cmd.push("--version", version);
         }
+        if (appVersion != null) {
+            cmd.push("--app-version", appVersion);
+        }
         cmd.push(chartLocation);
         try {
             process.stderr.write("Performing \"helm package\"...\n");
@@ -217,9 +233,18 @@ export default async function out(): Promise<{ data: Object, cleanupCallback: ((
 
     headers.append("Content-length", String(chartFileStat.size))
     headers.append("Content-Disposition", `attachment; filename="${path.basename(chartFile)}"`)
+    try {
+        if (request.params.username && request.params.password) {
+            headers.append("Authorization:", `'Basic ${btoa(request.params.username + ":" + request.params.password)}`)
+        }
+    } catch (e) {
+        process.stderr.write("Cannot find username or password.\n");
+        process.stderr.write(e);
+        process.exit(125);
+    }
 
     process.stderr.write(`Uploading chart file: "${chartFile}"...\n`);
-    const readStream = fs.createReadStream(chartFile);
+    const chartFileData = fs.createReadStream(chartFile);
     let postResult: Response;
     try {
         let postUrl = `${request.source.server_url}api/charts`;
@@ -229,7 +254,10 @@ export default async function out(): Promise<{ data: Object, cleanupCallback: ((
         postResult = await fetch(postUrl, {
             method: "POST",
             headers: headers,
-            body: readStream
+            body: JSON.stringify({
+                "repo": request.params.chart,
+                "chart": chartFileData
+            })
         });
     } catch (e) {
         process.stderr.write("Upload of chart file has failed.\n");

@@ -4,6 +4,8 @@
     "version": "0.6.0",
     "main": "./index.js",
     "dependencies": {
+        "@types/btoa": "^1.2.3",
+        "btoa": "^1.2.1",
         "node-fetch": "^2.6.0",
         "rimraf": "^2.6.3",
         "semver": "^6.1.1",

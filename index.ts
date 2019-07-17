@@ -79,9 +79,12 @@ export interface OutRequest extends Request {
         key_data?: string
         key_file?: string
         key_passphrase?: string
+        appVersion?: string
         version?: string
         version_file?: string
         force?: boolean
+        username?: string
+        password?: string
     }
 }
 
