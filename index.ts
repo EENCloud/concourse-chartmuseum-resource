@@ -34,6 +34,7 @@ interface IRequest {
     source: {
         server_url: string;
         chart_name: string;
+        project: string;
         version_range?: string;
         basic_auth_username?: string;
         basic_auth_password?: string;
@@ -84,7 +85,5 @@ export interface IOutRequest extends IRequest {
         version?: string;
         version_file?: string;
         force?: boolean;
-        username?: string;
-        password?: string;
     };
 }

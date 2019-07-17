@@ -29,6 +29,8 @@ Add a new resource type to your Concourse CI pipeline:
 
 * `chart_name`: *Required* The name of the chart to operate upon.
 
+* `project`: *Required* The name of the project/repository inside of Harbor.
+
 * `version_range`: Optional parameter that can be used to specify a (SemVer) version range
   that must match when checking for new charts, e.g. `=1.2.0`, `^2.0.0`, `~0.2.3` of `*`.
 

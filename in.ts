@@ -28,7 +28,8 @@ const writeFile = util.promisify(fs.writeFile);
 
     // Fetch metadata
     const chartResp = await fetch(
-        `${request.source.server_url}api/charts/${request.source.chart_name}/${request.version.version}`, { headers });
+        `${request.source.server_url}api/chartrepo/${request.source.project}/charts/${request.source.chart_name}/${request.version.version}`,
+        { headers });
     const chartJson: IHarborChartJSON = await chartResp.json();
 
     // Read params and pre-initialize them with documented default values.

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import * as child_process from "child_process";
+import * as FormData from "form-data";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -12,8 +13,11 @@ import fetch, { Response } from "node-fetch";
 import * as tmp from "tmp";
 import * as yaml from "yamljs";
 
+import { StringDecoder } from "string_decoder";
+import { URLSearchParams } from "url";
 import { createFetchHeaders, retrieveRequestFromStdin } from "./index";
 import { IOutRequest, IResponse } from "./index";
+import { IHarborChartJSON } from "./types";
 
 const exec = util.promisify(child_process.exec);
 const lstat = util.promisify(fs.lstat);
@@ -104,14 +108,13 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
     // If either params.version or params.version_file have been specified,
     // we'll read our version information for packaging the Helm Chart from
     // there.
-    let appVersion = request.params.app_version;
+    const appVersion = request.params.app_version;
     let version = request.params.version;
     if (request.params.version_file != null) {
         const versionFile = path.resolve(request.params.version_file);
         if ((await lstat(versionFile)).isFile()) {
             // version_file exists. Cool... let's read it's contents.
             version = (await readFile(versionFile)).toString().replace(/\r?\n/, "");
-            appVersion = (await readFile(versionFile)).toString().replace(/\r?\n/, "");
         }
     }
     if (version != null && request.source.version_range != null) {
@@ -221,22 +224,17 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
         process.exit(120);
     }
 
-    headers.append("Content-length", String(chartFileStat.size));
-    headers.append("Content-Disposition", `attachment; filename="${path.basename(chartFile)}"`);
-
-    process.stderr.write(`Uploading chart file: "${chartFile}"...\n`);
-    const chartFileData = fs.createReadStream(chartFile);
+    const formData = new FormData();
+    formData.append("chart", fs.createReadStream(chartFile));
     let postResult: Response;
     try {
-        let postUrl = `${request.source.server_url}api/charts`;
+        let postUrl = `${request.source.server_url}api/chartrepo/${request.source.project}/charts`;
+        process.stderr.write(`Uploading chart file: "${chartFile}" to "${postUrl}"... \n`);
         if (request.params.force) {
             postUrl += "?force=true";
         }
         postResult = await fetch(postUrl, {
-            body: JSON.stringify({
-                chart: chartFileData,
-                repo: request.params.chart,
-            }),
+            body: formData,
             headers,
             method: "POST",
         });
@@ -269,33 +267,33 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
 
     // Fetch Chart that has just been uploaded.
     headers = createFetchHeaders(request); // We need new headers. (Content-Length should be "0" again...)
-    const chartInfoUrl = `${request.source.server_url}api/charts/${request.source.chart_name}/${version}`;
+    const chartInfoUrl = `${request.source.server_url}api/chartrepo/${request.source.project}/charts/${request.source.chart_name}/${version}`;
     process.stderr.write(`Fetching chart data from "${chartInfoUrl}"...\n`);
     const chartResp = await fetch(
-        `${request.source.server_url}api/charts/${request.source.chart_name}/${version}`,
+        `${request.source.server_url}api/chartrepo/${request.source.project}/charts/${request.source.chart_name}/${version}`,
         { headers });
     if (!chartResp.ok) {
         process.stderr.write("Download of chart information failed.\n");
         process.stderr.write((await chartResp.buffer()).toString());
         process.exit(710);
     }
-    const chartJson = await chartResp.json();
+    const chartJson: IHarborChartJSON = await chartResp.json();
 
-    if (version !== chartJson.version) {
+    if (version !== chartJson.metadata.version) {
         process.stderr.write(
-            `Version mismatch in uploaded Helm Chart. Got: ${chartJson.version}, expected: ${version}.\n`);
+            `Version mismatch in uploaded Helm Chart. Got: ${chartJson.metadata.version}, expected: ${version}.\n`);
         process.exit(203);
     }
 
     const response: IResponse = {
         metadata: [
-            { name: "created", value: chartJson.created },
-            { name: "description", value: chartJson.description },
-            { name: "appVersion", value: chartJson.appVersion },
+            { name: "created", value: chartJson.metadata.created },
+            { name: "description", value: chartJson.metadata.description },
+            { name: "appVersion", value: chartJson.metadata.appVersion },
         ],
         version: {
-            digest: chartJson.digest,
-            version: chartJson.version,
+            digest: chartJson.metadata.digest,
+            version: chartJson.metadata.version,
         },
     };
 

@@ -17,9 +17,15 @@ const stderr = process.stderr;
 
     const headers = createFetchHeaders(request);
 
+    if (request.source.project == null) {
+        process.stderr.write("Missing project in source parameters. Please provide a project.");
+        process.exit(0);
+    }
+
     // Requests the charts from the remote endpoint.
-    let charts = await (await fetch(`${request.source.server_url}api/charts/${request.source.chart_name}`,
-    { headers })).json() as any[];
+    let charts = await (await fetch(
+        `${request.source.server_url}api/chartrepo/${request.source.project}/charts/${request.source.chart_name}`,
+        { headers })).json() as any[];
 
     // If a version has been specified in the check request, we'll use it to filter out all results
     // that are "smaller" by using semver's built-in comparison mechanism.
