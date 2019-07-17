@@ -74,7 +74,7 @@ unless overwritten by the parameter `target_basename`.
   only works, if the ChartMuseum server has *not* been started with the
   `--disable-force-overwrite` flag, though.
 
-* `appVersion`: Optional parameter that can be used to override the appVersion field in the
+* `app_version`: Optional parameter that can be used to override the appVersion field in the
 charts `Chart.yaml` file. If the override version is stored in a file, you can use the
   parameter `version_file` instead.
 

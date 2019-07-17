@@ -8,7 +8,7 @@ import * as rimraf from "rimraf";
 import * as semver from "semver";
 import * as util from "util";
 
-import fetch, { Body, Response } from "node-fetch";
+import fetch, { Response } from "node-fetch";
 import * as tmp from "tmp";
 import * as yaml from "yamljs";
 
@@ -104,7 +104,7 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
     // If either params.version or params.version_file have been specified,
     // we'll read our version information for packaging the Helm Chart from
     // there.
-    let appVersion = request.params.appVersion;
+    let appVersion = request.params.app_version;
     let version = request.params.version;
     if (request.params.version_file != null) {
         const versionFile = path.resolve(request.params.version_file);
