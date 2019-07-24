@@ -53,16 +53,14 @@ const writeFile = util.promisify(fs.writeFile);
     };
 
     const tgzResp = await fetch(
-        `${request.source.server_url}charts/${request.source.chart_name}-${chartJson.metadata.version}.tgz`,
+        `${request.source.server_url}chartrepo/${request.source.project}/charts/${request.source.chart_name}-${chartJson.metadata.version}.tgz`,
         { headers });
     await writeFile(path.resolve(destination, `${targetBasename}.tgz`), await tgzResp.buffer());
 
     const provResp = await fetch(
-        `${request.source.server_url}charts/${request.source.chart_name}-${chartJson.metadata.version}.tgz.prov`,
+        `${request.source.server_url}chartrepo/${request.source.project}/charts/${request.source.chart_name}-${chartJson.metadata.version}.tgz.prov`,
         { headers });
     await writeFile(path.resolve(destination, `${targetBasename}.tgz.prov`), await provResp.buffer());
-
     await writeFile(path.resolve(destination, `${targetBasename}.json`), JSON.stringify(chartJson));
     process.stdout.write(JSON.stringify(response, null, 2));
-
 })();
