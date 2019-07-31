@@ -134,7 +134,26 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
         const chartInfo = yaml.load(path.resolve(chartLocation, "Chart.yaml"));
         const tmpDir = await createTmpDir();
         cleanupCallback = tmpDir.cleanupCallback;
-        const cmd = [
+
+        const helmBuildCmd = [
+            "helm",
+            "dep",
+            "build",
+            chartLocation,
+        ];
+
+        try {
+            process.stderr.write("Performing \"helm dep build\"...\n");
+            await exec(helmBuildCmd.join(" "));
+        } catch (e) {
+            if (e.stderr != null) {
+                process.stderr.write(`${e.stderr}\n`);
+            }
+            process.stderr.write(`Retrieval of chart deps failed.\n`);
+            process.exit(121);
+        }
+
+        const helmPackageCmd = [
             "helm",
             "package",
             "--destination",
@@ -163,11 +182,11 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
                     throw e;
                 }
                 process.stderr.write(`GPG key imported successfully. Key ID: "${keyId}".\n`);
-                cmd.push("--sign");
-                cmd.push("--key");
-                cmd.push(keyId);
-                cmd.push("--keyring");
-                cmd.push(`"${path.resolve(gpgHome, "secring.gpg")}"`);
+                helmPackageCmd.push("--sign");
+                helmPackageCmd.push("--key");
+                helmPackageCmd.push(keyId);
+                helmPackageCmd.push("--keyring");
+                helmPackageCmd.push(`"${path.resolve(gpgHome, "secring.gpg")}"`);
             } catch (e) {
                 process.stderr.write("Signing of chart with GPG private key failed\n");
                 throw e;
@@ -178,15 +197,15 @@ export default async function out(): Promise<{ data: object, cleanupCallback: ((
 
         }
         if (version != null) {
-            cmd.push("--version", version);
+            helmPackageCmd.push("--version", version);
         }
         if (appVersion != null) {
-            cmd.push("--app-version", appVersion);
+            helmPackageCmd.push("--app-version", appVersion);
         }
-        cmd.push(chartLocation);
+        helmPackageCmd.push(chartLocation);
         try {
             process.stderr.write("Performing \"helm package\"...\n");
-            await exec(cmd.join(" "));
+            await exec(helmPackageCmd.join(" "));
         } catch (e) {
             if (e.stderr != null) {
                 process.stderr.write(`${e.stderr}\n`);

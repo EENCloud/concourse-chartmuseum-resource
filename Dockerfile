@@ -6,9 +6,9 @@ RUN echo "804f745e6884435ef1343f4de8940f9db64f935cd9a55ad3d9153d064b7f5896  /tmp
 RUN mkdir -p /data
 WORKDIR /data
 RUN gunzip -c "/tmp/helm.tar.gz" | tar -xf - \
-&& mv "/data/linux-amd64/helm" "/data/helm" \
-&& rm -f "/tmp/helm.tar.gz" \
-&& rm -rf "/tmp/linux-amd64"
+    && mv "/data/linux-amd64/helm" "/data/helm" \
+    && rm -f "/tmp/helm.tar.gz" \
+    && rm -rf "/tmp/linux-amd64"
 COPY . /src
 WORKDIR /src
 RUN npm -s install && npm -s run build && npm -s test && npm -s pack && mv eencloud-concourse-chartmuseum-resource-*.tgz /data/eencloud-concourse-chartmuseum-resource.tgz
@@ -18,15 +18,15 @@ RUN apk add --no-cache gnupg ca-certificates
 COPY --from=builder "/data/helm" "/usr/local/bin/helm"
 COPY --from=builder "/data/eencloud-concourse-chartmuseum-resource.tgz" "/tmp/eencloud-concourse-chartmuseum-resource.tgz"
 RUN npm -s install -g /tmp/eencloud-concourse-chartmuseum-resource.tgz \
-&& rm -f /tmp/eencloud-concourse-chartmuseum-resource.tgz \
-&& mkdir -p /opt/resource \
-&& ln -sf /usr/local/bin/concourse-chartmuseum-resource-check /opt/resource/check \
-&& ln -sf /usr/local/bin/concourse-chartmuseum-resource-in /opt/resource/in \
-&& ln -sf /usr/local/bin/concourse-chartmuseum-resource-out /opt/resource/out
+    && rm -f /tmp/eencloud-concourse-chartmuseum-resource.tgz \
+    && mkdir -p /opt/resource \
+    && ln -sf /usr/local/bin/concourse-chartmuseum-resource-check /opt/resource/check \
+    && ln -sf /usr/local/bin/concourse-chartmuseum-resource-in /opt/resource/in \
+    && ln -sf /usr/local/bin/concourse-chartmuseum-resource-out /opt/resource/out
 ENV PATH="/usr/local/bin:/usr/bin:/bin"
 RUN helm init --client-only
 LABEL maintainer="Aaron Layfield <alayfield@een.com>" \
-      version="0.7.0" \
+      version="0.7.1" \
       org.concourse-ci.target-version="5.3.0" \
       org.concourse-ci.resource-id="chartmuseum" \
       org.concourse-ci.resource-name="ChartMuseum package management" \
