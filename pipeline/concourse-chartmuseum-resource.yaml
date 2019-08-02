@@ -1,0 +1,56 @@
+resource_types:
+- name: helm
+  type: docker-image
+  source:
+    repository: linkyard/concourse-helm-resource
+    tag: 2.13.1
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+- name: harbor-versioning
+  type: docker-image
+  source:
+    repository: harbor.eencloud.com/vms/concourse-harbor-versioning-resource
+    username: ((credentials.harbor.username))
+    password: ((credentials.harbor.password))
+resources:
+- name: git-repo
+  type: git
+  source:
+    uri: git@github.com:EENCloud/concourse-chartmuseum-resource.git
+    branch: master
+    private_key: ((credentials.github-private_key))
+- name: versioning
+  type: harbor-versioning
+  source:
+    server_url: https://harbor.eencloud.com/
+    image_name: concourse-chartmuseum-resource
+    project: vms
+    basic_auth_username: ((credentials.harbor.username))
+    basic_auth_password: ((credentials.harbor.password))
+- name: image
+  type: docker-image
+  source:
+    repository: harbor.eencloud.com/vms/concourse-chartmuseum-resource
+    username: ((credentials.harbor.username))
+    password: ((credentials.harbor.password))
+jobs:
+- name: build
+  plan:
+  - get: git-repo
+    trigger: true
+  - get: versioning
+  - put: image
+    params:
+      build: git-repo
+      cache: true
+      cache_tag: latest
+      tag_file: versioning/version
+      tag_as_latest: true
+    get_params:
+      skip_download: true
+  - put: versioning
+    params: 
+      label_name: Production
+
