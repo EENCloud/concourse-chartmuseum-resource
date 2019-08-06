@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2019-08-06
+
+### Updated
+
+- Implemented support for "Requirements.yaml" repos being added.
+- Updated resource to be "harbor" specific. Rather then Chartmuseum.
+
+### Fixes
+- Cleaned up codebase. 
+- Better support for Asynchronous actions
+
+
 ## [0.7.0] - 2019-07-17
 
 ### Updated

@@ -19,7 +19,7 @@ Add a new resource type to your Concourse CI pipeline:
  - name: chartmuseum
   type: docker-image
   source:
-    repository: cathive/concourse-chartmuseum-resource
+    repository: eencloud/concourse-harbor-resource
     tag: latest # For reproducible builds use a specific tag and don't rely on "latest".
 ```
 

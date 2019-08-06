@@ -11,23 +11,23 @@ RUN gunzip -c "/tmp/helm.tar.gz" | tar -xf - \
     && rm -rf "/tmp/linux-amd64"
 COPY . /src
 WORKDIR /src
-RUN npm -s install && npm -s run build && npm -s test && npm -s pack && mv eencloud-concourse-chartmuseum-resource-*.tgz /data/eencloud-concourse-chartmuseum-resource.tgz
+RUN npm -s install && npm -s run build && npm -s test && npm -s pack && mv eencloud-concourse-harbor-resource-*.tgz /data/eencloud-concourse-harbor-resource.tgz
 
 FROM node:12.4.0-alpine
 RUN apk add --no-cache gnupg ca-certificates
 COPY --from=builder "/data/helm" "/usr/local/bin/helm"
-COPY --from=builder "/data/eencloud-concourse-chartmuseum-resource.tgz" "/tmp/eencloud-concourse-chartmuseum-resource.tgz"
-RUN npm -s install -g /tmp/eencloud-concourse-chartmuseum-resource.tgz \
-    && rm -f /tmp/eencloud-concourse-chartmuseum-resource.tgz \
+COPY --from=builder "/data/eencloud-concourse-harbor-resource.tgz" "/tmp/eencloud-concourse-harbor-resource.tgz"
+RUN npm -s install -g /tmp/eencloud-concourse-harbor-resource.tgz \
+    && rm -f /tmp/eencloud-concourse-harbor-resource.tgz \
     && mkdir -p /opt/resource \
-    && ln -sf /usr/local/bin/concourse-chartmuseum-resource-check /opt/resource/check \
-    && ln -sf /usr/local/bin/concourse-chartmuseum-resource-in /opt/resource/in \
-    && ln -sf /usr/local/bin/concourse-chartmuseum-resource-out /opt/resource/out
+    && ln -sf /usr/local/bin/concourse-harbor-resource-check /opt/resource/check \
+    && ln -sf /usr/local/bin/concourse-harbor-resource-in /opt/resource/in \
+    && ln -sf /usr/local/bin/concourse-harbor-resource-out /opt/resource/out
 ENV PATH="/usr/local/bin:/usr/bin:/bin"
 RUN helm init --client-only
 LABEL maintainer="Aaron Layfield <alayfield@een.com>" \
-      version="0.7.1" \
-      org.concourse-ci.target-version="5.3.0" \
-      org.concourse-ci.resource-id="chartmuseum" \
-      org.concourse-ci.resource-name="ChartMuseum package management" \
-      org.concourse-ci.resource-homepage="https://github.com/eencloud/concourse-chartmuseum-resource"
+      version="0.8.0" \
+      org.concourse-ci.target-version="5.4.0" \
+      org.concourse-ci.resource-id="harbor" \
+      org.concourse-ci.resource-name="Harbor package management" \
+      org.concourse-ci.resource-homepage="https://github.com/eencloud/concourse-harbor-resource"
