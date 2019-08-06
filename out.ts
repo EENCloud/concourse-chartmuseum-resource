@@ -31,12 +31,11 @@ async function createTmpDir(): Promise<{ path: string, cleanupCallback: () => vo
 
 export default async function out() {
   // Determine build path and decend into it.
-  // if (process.argv.length !== 3) {
-  //     process.stderr.write(`Expected exactly one argument (root), got ${process.argv.length - 2}.\n`);
-  //     process.exit(102);
-  // }
-  // const root = path.resolve(process.argv[2]);
-  const root = path.resolve("./");
+  if (process.argv.length !== 3) {
+      process.stderr.write(`Expected exactly one argument (root), got ${process.argv.length - 2}.\n`);
+      process.exit(102);
+  }
+  const root = path.resolve(process.argv[2]);
   process.chdir(root);
 
   let request: IOutRequest;
