@@ -4,7 +4,9 @@
     "version": "0.7.1",
     "main": "./index.js",
     "dependencies": {
+        "@types/line-reader": "^0.0.28",
         "form-data": "^2.5.0",
+        "line-reader": "^0.4.0",
         "node-fetch": "^2.6.0",
         "rimraf": "^2.6.3",
         "semver": "^6.1.1",
