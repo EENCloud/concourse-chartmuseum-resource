@@ -30,7 +30,7 @@ export class Helm {
     }
   }
 
-  public async GetChartFile(): Promise<string> {
+  public async GetChartPackage(): Promise<string> {
     const chartInfo = yaml.load(path.resolve(this.helmProps.chartLocation, "Chart.yaml"));
 
     return path.resolve(
@@ -83,6 +83,7 @@ export class Helm {
   public FetchChart = async (): Promise<IHarborChartJSON> => {
     // Fetch Chart that has just been uploaded.
     const headers = createFetchHeaders(this.request); // We need new headers. (Content-Length should be "0" again...)
+    console.log(this.helmProps.appVersion);
     const chartInfoUrl = `${this.request.source.server_url}api/chartrepo/${this.request.source.project}/charts/${this.request.source.chart_name}/${this.helmProps.version}`;
     process.stderr.write(`Fetching chart data from "${chartInfoUrl}"...\n`);
     const chartResp = await fetch(chartInfoUrl, { headers });

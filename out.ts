@@ -6,6 +6,7 @@ import * as semver from "semver";
 import * as tmp from "tmp";
 import * as util from "util";
 
+import { convertStrVersionToInt, getChartYaml, writeChartYaml } from "./Harbor";
 import { Helm } from "./Helm";
 import { retrieveRequestFromStdin } from "./index";
 import { IOutRequest, IResponse } from "./index";
@@ -30,12 +31,13 @@ async function createTmpDir(): Promise<{ path: string, cleanupCallback: () => vo
 }
 
 export default async function out() {
-  // Determine build path and decend into it.
-  if (process.argv.length !== 3) {
-      process.stderr.write(`Expected exactly one argument (root), got ${process.argv.length - 2}.\n`);
-      process.exit(102);
-  }
-  const root = path.resolve(process.argv[2]);
+  // // Determine build path and decend into it.
+  // if (process.argv.length !== 3) {
+  //     process.stderr.write(`Expected exactly one argument (root), got ${process.argv.length - 2}.\n`);
+  //     process.exit(102);
+  // }
+  // const root = path.resolve(process.argv[2]);
+  const root = path.resolve("/tmp/");
   process.chdir(root);
 
   let request: IOutRequest;
@@ -84,8 +86,20 @@ export default async function out() {
   };
 
   const helm = new Helm(helmObj, request);
+  const chartObj = getChartYaml(helm.helmProps.chartLocation);
+  if (version) {
+    chartObj.appVersion = version;
+  } else {
+    process.stderr.write("No version or version file passed...\n");
+    process.stderr.write("Incrementing patch version found in Chart.yaml.\n");
+    let [major, minor, patch] = convertStrVersionToInt(chartObj.appVersion);
+    patch++;
+    chartObj.appVersion = `${major.toString()}.${minor.toString()}.${patch.toString()}`;
+    helm.helmProps.appVersion = `${major.toString()}.${minor.toString()}.${patch.toString()}`;
+  }
+  writeChartYaml(helm.helmProps.chartLocation, chartObj);
   await helm.InitHelmChart(async () => {
-    const chartFile = await helm.GetChartFile();
+    const chartFile = await helm.GetChartPackage();
     if (!await helm.CheckPackageExists(chartFile)) {
       process.stderr.write("Cannot find packaged helm chart.\n");
       process.exit(160);
