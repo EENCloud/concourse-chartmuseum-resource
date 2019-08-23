@@ -81,7 +81,7 @@ export interface IOutRequest extends IRequest {
         key_data?: string;
         key_file?: string;
         key_passphrase?: string;
-        app_version?: string;
+        set_app_version?: boolean;
         version?: string;
         version_file?: string;
         force?: boolean;

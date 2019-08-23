@@ -4,8 +4,8 @@ export interface IHelm {
     path: string;
     cleanupCallback: () => void;
   };
-  version: string | undefined;
   appVersion: string | undefined;
+  chartVersion: string;
 }
 
 
