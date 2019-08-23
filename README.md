@@ -60,43 +60,26 @@ unless overwritten by the parameter `target_basename`.
 
 #### "in" Parameters
 
-* `target_basename`: Optional parameter that can be used to change the name of the
-  input files that will be written.
+* `target_basename`: Optional parameter that can be used to change the name of the input files that will be written.
 
 ### out: Push an updated version of the Helm chart
 
 #### "out" Parameters
 
-* `chart`: *Required* Path to the tgz-archive or a folder that contains the chart to be
-  uploaded. If a folder has been specified instead of a tgz file, this folder will be
-  packaged prior to uploading it's contents to the ChartMuseum instance.
+* `chart`: *Required* Path to the tgz-archive or a folder that contains the chart to be uploaded. If a folder has been specified instead of a tgz file, this folder will be packaged prior to uploading it's contents to the ChartMuseum instance.
 
-* `force`: Optional parameter that can be used to force the upload of the chart,
-  even if the version to be uploaded does already exist on the server. Enforcement
-  only works, if the ChartMuseum server has *not* been started with the
-  `--disable-force-overwrite` flag, though.
+* `force`: Optional parameter that can be used to force the upload of the chart, even if the version to be uploaded does already exist on the server. Enforcement only works, if the ChartMuseum server has *not* been started with the `--disable-force-overwrite` flag, though.
 
-* `app_version`: Optional parameter that can be used to override the appVersion field in the
-charts `Chart.yaml` file. If the override version is stored in a file, you can use the
-  parameter `version_file` instead.
+* `set_app_version`: Optional boolean that can be used to set the appVersion in `Chart.yaml` based on the version found in `version` or `version_file`.
 
-* `version`: Optional parameter that can be used to override the "version" field in the
-  chart's `Chart.yaml` file. If the override version is stored in a file, you can use the
-  parameter `version_file` instead.
+* `version`: Optional parameter that can be used to override the "version" field in the chart's `Chart.yaml` file. If the override version is stored in a file, you can use the parameter `version_file` instead.
 
-* `version_file`: Optional parameter that points to a file that contains a version string
-  that should be used to override the version specified in the chart's `Chart.yaml` file.
+* `version_file`: Optional parameter that points to a file that contains a version string that should be used to override the version specified in the chart's `Chart.yaml` file.
 
-* `sign`: Optional parameter that indicates if the chart package should be signed using a
-  GPG key. If set to `true` either `key_data` or `key_file` must be specified as well.
+* `sign`: Optional parameter that indicates if the chart package should be signed using a GPG key. If set to `true` either `key_data` or `key_file` must be specified as well.
 
-* `key_data`: If `sign` has been set to `true`, this parameter can be used to pass the
-  key that shall be used to sign the chart package.
+* `key_data`: If `sign` has been set to `true`, this parameter can be used to pass the key that shall be used to sign the chart package.
 
-* `key_file`: If `sign` has been set to `true`, this parameter can be used to pass the
-  location of a file that contains the GPG key that shall be used to sign the chart
-  package.
+* `key_file`: If `sign` has been set to `true`, this parameter can be used to pass the location of a file that contains the GPG key that shall be used to sign the chart package.
 
-* `key_passphrase`: If `sign` has been set to `true` this parameter can be used to
-  specifcy the passphrase that protects the GPG signing key that shall be used to sign
-  the chart package.
+* `key_passphrase`: If `sign` has been set to `true` this parameter can be used to specifcy the passphrase that protects the GPG signing key that shall be used to sign the chart package.

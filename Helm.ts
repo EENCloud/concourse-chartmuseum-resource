@@ -24,18 +24,14 @@ export class Helm {
   constructor(helmProps: IHelm, request: IOutRequest) {
     this.helmProps = helmProps;
     this.request = request;
-    if (!helmProps.version) {
-      process.stderr.write("No version given. Grabbing version from Chart.yaml.version.\n");
-      helmProps.version = this.UpdateVersion();
-    }
   }
 
-  public async GetChartFile(): Promise<string> {
+  public async GetChartPackage(): Promise<string> {
     const chartInfo = yaml.load(path.resolve(this.helmProps.chartLocation, "Chart.yaml"));
 
     return path.resolve(
       this.helmProps.tempDirectory.path,
-      `${chartInfo.name}-${this.helmProps.version}.tgz`,
+      `${chartInfo.name}-${this.helmProps.chartVersion}.tgz`,
     );
   }
 
@@ -77,13 +73,13 @@ export class Helm {
     }
     process.stderr.write("Helm Chart has been uploaded.\n");
     process.stderr.write(`- Name: ${this.request.source.chart_name}\n`);
-    process.stderr.write(`- Version: ${this.helmProps.version}\n\n`);
+    process.stderr.write(`- Version: ${this.helmProps.chartVersion}\n\n`);
   }
 
   public FetchChart = async (): Promise<IHarborChartJSON> => {
     // Fetch Chart that has just been uploaded.
     const headers = createFetchHeaders(this.request); // We need new headers. (Content-Length should be "0" again...)
-    const chartInfoUrl = `${this.request.source.server_url}api/chartrepo/${this.request.source.project}/charts/${this.request.source.chart_name}/${this.helmProps.version}`;
+    const chartInfoUrl = `${this.request.source.server_url}api/chartrepo/${this.request.source.project}/charts/${this.request.source.chart_name}/${this.helmProps.chartVersion}`;
     process.stderr.write(`Fetching chart data from "${chartInfoUrl}"...\n`);
     const chartResp = await fetch(chartInfoUrl, { headers });
     if (!chartResp.ok) {
@@ -166,8 +162,8 @@ export class Helm {
         await deltree(gpgHome);
       }
     }
-    if (this.helmProps.version != null) {
-      helmPackageCmd.push("--version", this.helmProps.version);
+    if (this.helmProps.chartVersion != null) {
+      helmPackageCmd.push("--version", this.helmProps.chartVersion);
     }
     if (this.helmProps.appVersion != null) {
       helmPackageCmd.push("--app-version", this.helmProps.appVersion);
@@ -190,7 +186,7 @@ export class Helm {
         process.stderr.write("Unable to parse version information from Helm Chart inspection result.\n");
         process.exit(121);
       } else {
-        this.helmProps.version = versionLine.split(/version:\s*/)[1];
+        this.helmProps.chartVersion = versionLine.split(/version:\s*/)[1];
       }
       return true;
     } catch (e) {

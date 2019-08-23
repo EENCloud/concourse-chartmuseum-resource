@@ -6,6 +6,7 @@ import * as semver from "semver";
 import * as tmp from "tmp";
 import * as util from "util";
 
+import { convertStrVersionToInt, getChartYaml, writeChartYaml } from "./Harbor";
 import { Helm } from "./Helm";
 import { retrieveRequestFromStdin } from "./index";
 import { IOutRequest, IResponse } from "./index";
@@ -30,12 +31,13 @@ async function createTmpDir(): Promise<{ path: string, cleanupCallback: () => vo
 }
 
 export default async function out() {
-  // Determine build path and decend into it.
-  if (process.argv.length !== 3) {
-      process.stderr.write(`Expected exactly one argument (root), got ${process.argv.length - 2}.\n`);
-      process.exit(102);
-  }
-  const root = path.resolve(process.argv[2]);
+  // // Determine build path and decend into it.
+  // if (process.argv.length !== 3) {
+  //     process.stderr.write(`Expected exactly one argument (root), got ${process.argv.length - 2}.\n`);
+  //     process.exit(102);
+  // }
+  // const root = path.resolve(process.argv[2]);
+  const root = path.resolve("/tmp/");
   process.chdir(root);
 
   let request: IOutRequest;
@@ -48,10 +50,14 @@ export default async function out() {
     throw (e);
   }
 
+  if (!request.params.version && !request.params.version_file) {
+    process.stderr.write("No version found. Either version or version_file param must be provided.\n");
+    process.exit(502);
+  }
+
   // If either params.version or params.version_file have been specified,
   // we'll read our version information for packaging the Helm Chart from
   // there.
-  const appVersion = request.params.app_version;
   let version = request.params.version;
   if (request.params.version_file != null) {
     const versionFile = path.resolve(request.params.version_file);
@@ -71,31 +77,38 @@ export default async function out() {
 
   const chartLocation = path.resolve(request.params.chart);
   process.stderr.write(`Processing chart at "${chartLocation}"...\n`);
+
   const chartFileStat = await lstat(chartLocation);
   if (!chartFileStat.isDirectory()) {
     process.stderr.write(`Chart file (${chartLocation}) not found.\n`);
     process.exit(110);
   }
+
+  const chartObj = getChartYaml(chartLocation);
+  if (request.params.set_app_version && version) { chartObj.appVersion = version; }
+  if (version) { chartObj.version = version; }
+  writeChartYaml(chartLocation, chartObj);
+
   const helmObj: IHelm = {
-    appVersion,
+    appVersion: chartObj.appVersion,
     chartLocation,
+    chartVersion: chartObj.version,
     tempDirectory: await createTmpDir(),
-    version,
   };
 
   const helm = new Helm(helmObj, request);
   await helm.InitHelmChart(async () => {
-    const chartFile = await helm.GetChartFile();
+    const chartFile = await helm.GetChartPackage();
     if (!await helm.CheckPackageExists(chartFile)) {
       process.stderr.write("Cannot find packaged helm chart.\n");
       process.exit(160);
     }
     await helm.UploadChart(chartFile);
     const chartJson = await helm.FetchChart();
-    if (helm.helmProps.version !== chartJson.metadata.version) {
+    if (chartObj.version !== chartJson.metadata.version) {
         process.stderr.write(
           `Version mismatch in uploaded Helm Chart.
-          Got: ${chartJson.metadata.version}, expected: ${helm.helmProps.version}.\n`);
+          Got: ${chartJson.metadata.version}, expected: ${chartObj.version}.\n`);
         process.exit(203);
       }
 
