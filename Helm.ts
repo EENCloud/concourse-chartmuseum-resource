@@ -100,20 +100,25 @@ export class Helm {
       const reqLocation = path.resolve(`${this.helmProps.chartLocation}/requirements.yaml`);
       const repoRegex = new RegExp(
         /(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/);
+      const helmRepositories: IHelmRepository[] = [];
       lineReader.eachLine(reqLocation, async (line, last) => {
-        const helmRepositories: IHelmRepository[] = [];
         const matchedGroups = line.match(repoRegex);
         if (matchedGroups) {
           process.stderr.write(`Adding repo ${matchedGroups[0]}. Checking name...\n`);
           const nameRegex = new RegExp(/\/\/([^\.]*)/);
           const name = matchedGroups[0].match(nameRegex);
-          if (name) {
+          const repoExists = helmRepositories.some((repo) => name ? repo.name === name[1] : false);
+          if (name && !repoExists) {
             helmRepositories.push({
               name: name[1],
               repository: matchedGroups[0],
             });
           } else {
-            process.stderr.write(`Can't capture name from repo: ${matchedGroups[0]}...\n`);
+            if (repoExists) {
+              process.stderr.write(`Repo ${matchedGroups[0]} already found...\n`);
+            } else {
+              process.stderr.write(`Can't capture name from repo: ${matchedGroups[0]}...\n`);
+            }
           }
         }
         if (last) {

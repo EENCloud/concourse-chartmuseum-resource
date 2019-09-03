@@ -105,11 +105,11 @@ export default async function out() {
     await helm.UploadChart(chartFile);
     const chartJson = await helm.FetchChart();
     if (chartObj.version !== chartJson.metadata.version) {
-        process.stderr.write(
-          `Version mismatch in uploaded Helm Chart.
-          Got: ${chartJson.metadata.version}, expected: ${chartObj.version}.\n`);
-        process.exit(203);
-      }
+      process.stderr.write(
+        `Version mismatch in uploaded Helm Chart.
+        Got: ${chartJson.metadata.version}, expected: ${chartObj.version}.\n`);
+      process.exit(203);
+    }
 
     const response: IResponse = {
         metadata: [
