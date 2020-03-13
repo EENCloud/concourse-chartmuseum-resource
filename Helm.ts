@@ -203,15 +203,17 @@ export class Helm {
   public BuildHelmPackages = async (cb: () => void) => {
     const helmBuildCmd = ["helm", "dep", "build", this.helmProps.chartLocation];
     process.stderr.write("Running \"helm dep build\"...\n");
-    child_process.exec(helmBuildCmd.join(" "), async () => await this.CreateHelmPackage(cb));
+    child_process.execSync(helmBuildCmd.join(" "))
+    await this.CreateHelmPackage(cb);
   }
 
   private AddRepository = async (repositories: IHelmRepository[], cb: () => void) => {
     repositories.forEach(async (repo) => {
       process.stderr.write(`Adding repo with name: ${repo.name}...\n`);
       const helmRepoAdd = ["helm", "repo", "add", repo.name, repo.repository];
-      child_process.exec(helmRepoAdd.join(" "), async () => await this.BuildHelmPackages(cb));
+      child_process.execSync(helmRepoAdd.join(" "));
     });
+    await this.BuildHelmPackages(cb);
   }
 
   private UpdateVersion = (): string => {
