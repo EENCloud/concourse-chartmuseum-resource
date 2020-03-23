@@ -13,7 +13,6 @@ import { IHarborChartJSON } from "./types";
 import { IHelm, IHelmRepository } from "./types/Helm";
 
 const execSync = util.promisify(child_process.exec);
-const lstat = util.promisify(fs.lstat);
 const writeFile = util.promisify(fs.writeFile);
 const mkdtemp = util.promisify(fs.mkdtemp);
 const deltree = util.promisify(rimraf);
@@ -52,8 +51,7 @@ export class Helm {
       });
     } catch (e) {
       process.stderr.write("Upload of chart file has failed.\n");
-      process.stderr.write(e);
-      throw e; // Tricking the typescript compiler.
+      throw e;
     }
 
     if (postResult.status !== 201) {
@@ -104,7 +102,7 @@ export class Helm {
       lineReader.eachLine(reqLocation, async (line, last) => {
         const matchedGroups = line.match(repoRegex);
         if (matchedGroups) {
-          process.stderr.write(`Adding repo ${matchedGroups[0]}. Checking name...\n`);
+          process.stderr.write(`Repo ${matchedGroups[0]} needs to be added. Checking name...\n`);
           const nameRegex = new RegExp(/\/\/([^\.]*)/);
           const name = matchedGroups[0].match(nameRegex);
           const repoExists = helmRepositories.some((repo) => name ? repo.name === name[1] : false);
@@ -208,7 +206,7 @@ export class Helm {
   }
 
   private AddRepository = async (repositories: IHelmRepository[], cb: () => void) => {
-    repositories.forEach(async (repo) => {
+    repositories.forEach((repo) => {
       process.stderr.write(`Adding repo with name: ${repo.name}...\n`);
       const helmRepoAdd = ["helm", "repo", "add", repo.name, repo.repository];
       child_process.execSync(helmRepoAdd.join(" "));
