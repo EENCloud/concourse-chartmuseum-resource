@@ -24,7 +24,6 @@ RUN npm -s install -g /tmp/eencloud-concourse-harbor-resource.tgz \
     && ln -sf /usr/local/bin/concourse-harbor-resource-in /opt/resource/in \
     && ln -sf /usr/local/bin/concourse-harbor-resource-out /opt/resource/out
 ENV PATH="/usr/local/bin:/usr/bin:/bin"
-RUN helm init --client-only
 LABEL maintainer="Aaron Layfield <alayfield@een.com>" \
       version="0.8.2" \
       org.concourse-ci.target-version="5.4.0" \
