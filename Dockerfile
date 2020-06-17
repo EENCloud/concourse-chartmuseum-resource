@@ -1,6 +1,6 @@
 FROM node:12.4.0 as builder
 RUN apt-get -y update && apt-get -y install curl gzip tar unzip
-ARG HELM_DOWNLOAD_URL="https://get.helm.sh/helm-v2.14.1-linux-amd64.tar.gz"
+ARG HELM_DOWNLOAD_URL="https://get.helm.sh/helm-v3.2.4-linux-amd64.tar.gz"
 RUN curl -s -j -k -L "${HELM_DOWNLOAD_URL}" > /tmp/helm.tar.gz
 RUN echo "804f745e6884435ef1343f4de8940f9db64f935cd9a55ad3d9153d064b7f5896  /tmp/helm.tar.gz" | sha256sum -c
 RUN mkdir -p /data
