@@ -1,7 +1,6 @@
 import * as child_process from "child_process";
 import * as FormData from "form-data";
 import * as fs from "fs";
-import lineReader = require("line-reader");
 import fetch, { Response } from "node-fetch";
 import * as os from "os";
 import * as path from "path";
@@ -10,7 +9,7 @@ import * as util from "util";
 import * as yaml from "yamljs";
 import { createFetchHeaders, IOutRequest } from ".";
 import { IHarborChartJSON } from "./types";
-import { IHelm, IHelmRepository } from "./types/Helm";
+import { IHelm, IHelmRepository, HelmChart } from "./types/Helm";
 
 const execSync = util.promisify(child_process.exec);
 const writeFile = util.promisify(fs.writeFile);
@@ -89,41 +88,38 @@ export class Helm {
   }
 
   public InitHelmChart = async (cb: () => Promise<void>) => {
-    const reqFileLoc = `${this.helmProps.chartLocation}/requirements.yaml`;
+    const reqFileLoc = `${this.helmProps.chartLocation}/Chart.yaml`;
+    process.stderr.write(`Looking for requirements in ${reqFileLoc}.\n`);
     if (!fs.existsSync(reqFileLoc)) {
       process.stderr.write("No requirements found.\n");
       await this.BuildHelmPackages(cb);
     } else {
-      process.stderr.write("Requirements found. Adding repositories...\n");
-      const reqLocation = path.resolve(`${this.helmProps.chartLocation}/requirements.yaml`);
-      const repoRegex = new RegExp(
-        /(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/);
+      process.stderr.write("Requirements found in Chart.yaml. Adding repositories...\n");
+      const reqLocation = path.resolve(`${this.helmProps.chartLocation}/Chart.yaml`);
       const helmRepositories: IHelmRepository[] = [];
-      lineReader.eachLine(reqLocation, async (line, last) => {
-        const matchedGroups = line.match(repoRegex);
-        if (matchedGroups) {
-          process.stderr.write(`Repo ${matchedGroups[0]} needs to be added. Checking name...\n`);
+      const chartYaml: HelmChart = yaml.load(reqLocation)
+      chartYaml.dependencies.forEach(async (line) => {
+          process.stderr.write(`Repo ${line.repository} needs to be added. Checking name...\n`);
           const nameRegex = new RegExp(/\/\/([^\.]*)/);
-          const name = matchedGroups[0].match(nameRegex);
-          const repoExists = helmRepositories.some((repo) => name ? repo.name === name[1] : false);
-          if (name && !repoExists) {
+          const nameOut = line.repository.match(nameRegex);
+          process.stderr.write(`Checking Repo ${nameOut} in repository list...\n`);
+          const repoExists = helmRepositories.some((repo) => nameOut ? repo.name === nameOut[1] : false);
+          if (nameOut && !repoExists) {
             helmRepositories.push({
-              name: name[1],
-              repository: matchedGroups[0],
+              name: nameOut[1],
+              repository: line.repository,
             });
           } else {
             if (repoExists) {
-              process.stderr.write(`Repo ${matchedGroups[0]} already found...\n`);
+              process.stderr.write(`Repo ${line.repository} already found...\n`);
             } else {
-              process.stderr.write(`Can't capture name from repo: ${matchedGroups[0]}...\n`);
+              process.stderr.write(`Can't capture name from repo: ${line.repository}...\n`);
             }
-          }
-        }
-        if (last) {
-          await this.AddRepository(helmRepositories, cb);
         }
       });
-    }
+      process.stderr.write(`Adding repositories: ${helmRepositories}\n`);
+      await this.AddRepository(helmRepositories, cb);
+  }
   }
 
   public CreateHelmPackage = async (cb: () => void)  => {
@@ -179,7 +175,7 @@ export class Helm {
   public CheckPackageExists = async (chartFile: string): Promise<boolean> => {
     process.stderr.write(`Inspecting chart file: "${chartFile}"...\n`);
     try {
-      const result = await execSync(`helm inspect ${chartFile}`);
+      const result = await execSync(`helm inspect chart ${chartFile}`);
       if (result.stderr != null && result.stderr.length > 0) {
         process.stderr.write(`${result.stderr}\n`);
       }
@@ -199,8 +195,8 @@ export class Helm {
   }
 
   public BuildHelmPackages = async (cb: () => void) => {
-    const helmBuildCmd = ["helm", "dep", "build", this.helmProps.chartLocation];
-    process.stderr.write("Running \"helm dep build\"...\n");
+    const helmBuildCmd = ["helm", "dep", "update", this.helmProps.chartLocation];
+    process.stderr.write("Running \"helm dep update\"...\n");
     child_process.execSync(helmBuildCmd.join(" "))
     await this.CreateHelmPackage(cb);
   }
