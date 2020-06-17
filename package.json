@@ -5,6 +5,7 @@
     "main": "./index.js",
     "dependencies": {
         "form-data": "^2.5.0",
+        "harbor-client": "^1.0.4",
         "line-reader": "^0.4.0",
         "node-fetch": "^2.6.0",
         "rimraf": "^2.6.3",

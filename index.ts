@@ -1,4 +1,5 @@
 import { Headers } from "node-fetch";
+import { HarborRequest } from "harbor-client"
 
 export async function retrieveRequestFromStdin<T extends any>(): Promise<T> {
     return new Promise<T>((resolve, reject) => {
@@ -30,28 +31,17 @@ export function createFetchHeaders<R extends ICheckRequest>(request: R): Headers
     return headers;
 }
 
-interface IRequest {
-    source: {
-        server_url: string;
-        chart_name: string;
-        project: string;
-        version_range?: string;
-        basic_auth_username?: string;
-        basic_auth_password?: string;
-    };
-}
-
-export interface ICheckRequest extends IRequest {
+export interface ICheckRequest extends HarborRequest {
     version?: {
         version: string;
         digest: string;
     };
 }
 
-export type CheckResponse = Array<{
+export type CheckResponse = {
     version: string;
     digest: string;
-}>;
+}[];
 
 export interface IInRequest extends ICheckRequest {
     version: {
@@ -68,13 +58,13 @@ export interface IResponse {
         version: string,
         digest: string,
     };
-    metadata: Array<{
+    metadata: {
         name: string;
         value: string;
-    }>;
+    }[];
 }
 
-export interface IOutRequest extends IRequest {
+export interface IOutRequest extends HarborRequest {
     params: {
         chart: string;
         sign?: boolean;
