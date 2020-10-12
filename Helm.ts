@@ -1,3 +1,4 @@
+import { kMaxLength } from "buffer";
 import * as child_process from "child_process";
 import * as FormData from "form-data";
 import * as fs from "fs";
@@ -8,6 +9,7 @@ import * as rimraf from "rimraf";
 import * as util from "util";
 import * as yaml from "yamljs";
 import { createFetchHeaders, IOutRequest } from ".";
+import { getChartYaml } from "./Harbor";
 import { IHarborChartJSON } from "./types";
 import { IHelm, IHelmRepository, HelmChart } from "./types/Helm";
 
@@ -90,7 +92,8 @@ export class Helm {
   public InitHelmChart = async (cb: () => Promise<void>) => {
     const reqFileLoc = `${this.helmProps.chartLocation}/Chart.yaml`;
     process.stderr.write(`Looking for requirements in ${reqFileLoc}.\n`);
-    if (!fs.existsSync(reqFileLoc)) {
+    const chartYaml = getChartYaml(reqFileLoc);
+    if (chartYaml.dependencies.length === 0) {
       process.stderr.write("No requirements found.\n");
       await this.BuildHelmPackages(cb);
     } else {
