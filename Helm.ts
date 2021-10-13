@@ -75,16 +75,18 @@ export class Helm {
     process.stderr.write(`- Version: ${this.helmProps.chartVersion}\n\n`);
   }
 
-  public FetchChart = async (): Promise<IHarborChartJSON> => {
+  public FetchChart = async (attempts: number): Promise<IHarborChartJSON|null> => {
     // Fetch Chart that has just been uploaded.
     const headers = createFetchHeaders(this.request); // We need new headers. (Content-Length should be "0" again...)
     const chartInfoUrl = `${this.request.source.server_url}api/chartrepo/${this.request.source.project}/charts/${this.request.source.chart_name}/${this.helmProps.chartVersion}`;
     process.stderr.write(`Fetching chart data from "${chartInfoUrl}"...\n`);
     const chartResp = await fetch(chartInfoUrl, { headers });
-    if (!chartResp.ok) {
-      process.stderr.write("Download of chart information failed.\n");
+    if (!chartResp.ok && attempts == 3) {
+      process.stderr.write("Download of chart information failed. Attempts reached. Failing...\n");
       process.stderr.write((await chartResp.buffer()).toString());
       process.exit(710);
+    } else if (!chartResp.ok) {
+      return null
     }
     return await chartResp.json();
   }
@@ -92,15 +94,13 @@ export class Helm {
   public InitHelmChart = async (cb: () => Promise<void>) => {
     const reqFileLoc = `${this.helmProps.chartLocation}/Chart.yaml`;
     process.stderr.write(`Looking for requirements in ${reqFileLoc}.\n`);
-    const chartYaml = getChartYaml(reqFileLoc);
-    if (chartYaml.dependencies.length === 0) {
+    const chartYaml = getChartYaml(this.helmProps.chartLocation);
+    if (!chartYaml.dependencies || chartYaml.dependencies.length === 0) {
       process.stderr.write("No requirements found.\n");
       await this.BuildHelmPackages(cb);
     } else {
       process.stderr.write("Requirements found in Chart.yaml. Adding repositories...\n");
-      const reqLocation = path.resolve(`${this.helmProps.chartLocation}/Chart.yaml`);
       const helmRepositories: IHelmRepository[] = [];
-      const chartYaml: HelmChart = yaml.load(reqLocation)
       chartYaml.dependencies.forEach(async (line) => {
           process.stderr.write(`Repo ${line.repository} needs to be added. Checking name...\n`);
           const nameRegex = new RegExp(/\/\/([^\.]*)/);
