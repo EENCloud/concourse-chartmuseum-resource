@@ -74,16 +74,18 @@ export class Helm {
     process.stderr.write(`- Version: ${this.helmProps.chartVersion}\n\n`);
   }
 
-  public FetchChart = async (): Promise<IHarborChartJSON> => {
+  public FetchChart = async (attempts: number): Promise<IHarborChartJSON|null> => {
     // Fetch Chart that has just been uploaded.
     const headers = createFetchHeaders(this.request); // We need new headers. (Content-Length should be "0" again...)
     const chartInfoUrl = `${this.request.source.server_url}api/chartrepo/${this.request.source.project}/charts/${this.request.source.chart_name}/${this.helmProps.chartVersion}`;
     process.stderr.write(`Fetching chart data from "${chartInfoUrl}"...\n`);
     const chartResp = await fetch(chartInfoUrl, { headers });
-    if (!chartResp.ok) {
+    if (!chartResp.ok && attempts == 3) {
       process.stderr.write("Download of chart information failed.\n");
       process.stderr.write((await chartResp.buffer()).toString());
       process.exit(710);
+    } else if (!chartResp.ok) {
+        return null
     }
     return await chartResp.json();
   }

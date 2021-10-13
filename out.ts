@@ -14,6 +14,7 @@ import { IHelm } from "./types/Helm";
 
 const lstat = util.promisify(fs.lstat);
 const readFile = util.promisify(fs.readFile);
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 async function createTmpDir(): Promise<{ path: string, cleanupCallback: () => void }> {
   return new Promise<{ path: string, cleanupCallback: () => void }>((resolve, reject) => {
@@ -103,28 +104,35 @@ export default async function out() {
       process.exit(160);
     }
     await helm.UploadChart(chartFile);
-    const chartJson = await helm.FetchChart();
-    if (chartObj.version !== chartJson.metadata.version) {
-      process.stderr.write(
-        `Version mismatch in uploaded Helm Chart.
-        Got: ${chartJson.metadata.version}, expected: ${chartObj.version}.\n`);
-      process.exit(203);
-    }
-
-    const response: IResponse = {
-        metadata: [
-          { name: "created", value: chartJson.metadata.created },
-          { name: "description", value: chartJson.metadata.description },
-          { name: "appVersion", value: chartJson.metadata.appVersion },
-        ],
-        version: {
-          digest: chartJson.metadata.digest,
-          version: chartJson.metadata.version,
-        },
-      };
-    process.stdout.write(JSON.stringify(response));
-    process.exit(0);
-  });
+    // Race condition on scanning in Harbor. Adding attempts.
+    for (let attempts = 0; attempts < 3; attempts++) {
+        const chartJson = await helm.FetchChart(attempts);
+        if (chartJson == null) {
+          process.stderr.write(`Failed to find chart. Attempt ${attempts} of 3 retrying...\n`);
+          await delay(5000)
+          continue;
+        }
+        if (chartObj.version !== chartJson.metadata.version) {
+          process.stderr.write(
+            `Version mismatch in uploaded Helm Chart.
+            Got: ${chartJson.metadata.version}, expected: ${chartObj.version}.\n`);
+          process.exit(203);
+        }
+        const response: IResponse = {
+          metadata: [
+            { name: "created", value: chartJson.metadata.created },
+            { name: "description", value: chartJson.metadata.description },
+            { name: "appVersion", value: chartJson.metadata.appVersion },
+          ],
+          version: {
+            digest: chartJson.metadata.digest,
+            version: chartJson.metadata.version,
+          },
+        };
+        process.stdout.write(JSON.stringify(response));
+        process.exit(0);
+      }
+    });
 }
 
 (async () => {
