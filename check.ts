@@ -56,6 +56,4 @@ const stderr = process.stderr;
         version: chart.version,
     }));
     process.stdout.write(JSON.stringify(response, null, 2));
-    process.exit(0);
-
 })();
